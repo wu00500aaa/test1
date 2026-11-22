@@ -107,7 +107,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 const fmt=d=>{const x=new Date(d+'T00:00:00');return (x.getMonth()+1)+' 月 '+x.getDate()+' 日 週'+WD[x.getDay()]};
 const nowHM=()=>{const n=new Date();return pad(n.getHours())+':'+pad(n.getMinutes())};
 sel=today();
-function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast('儲存空間不足，請先備份並移除部分圖片')}}
+function save(){kvPut('state',S).catch(()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast('儲存失敗，請先備份資料')}})}
 let tm;function toast(m){const t=$('#tt');t.textContent=m;t.hidden=false;clearTimeout(tm);tm=setTimeout(()=>t.hidden=true,4000)}
 function itemsFor(d){
   const wd=new Date(d+'T00:00:00').getDay();
@@ -124,6 +124,55 @@ function list(d){
     return `<div class="row"><button class="ck${dn?' on':''}" data-a="ck" data-k="${i.k}" aria-label="標記完成"></button>
 <button class="rt" data-a="edit" data-kind="${i.kind}" data-id="${i.id}"><div class="tt${dn?' dn':''}">${esc(i.title)}</div>
 <div class="sub${late?' late':''}">${late?'已到提醒時間 ':''}${i.time?i.time+' ':''}${i.kind==='d'?'每日任務':''}${tag(i)}${i.note?' ' + esc(i.note):''}</div></button></div>`}).join('');
+}
+let DB;const QS={low:[480,.55],std:[720,.7],hi:[1080,.8]},URLS={};
+const idb=()=>DB||(DB=new Promise((ok,no)=>{const r=indexedDB.open('everyday',1);r.onupgradeneeded=()=>{r.result.createObjectStore('kv');r.result.createObjectStore('img')};r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)}));
+const tx=(st,mode,fn)=>idb().then(d=>new Promise((ok,no)=>{const t=d.transaction(st,mode),q=fn(t.objectStore(st));t.oncomplete=()=>ok(q&&q.result);t.onerror=()=>no(t.error)}));
+const kvGet=k=>tx('kv','readonly',s=>s.get(k)),kvPut=(k,v)=>tx('kv','readwrite',s=>s.put(v,k));
+const imGet=k=>tx('img','readonly',s=>s.get(k)),imPut=(k,v)=>tx('img','readwrite',s=>s.put(v,k)),imDel=k=>tx('img','readwrite',s=>s.delete(k));
+const d2b=u=>{const p=u.split(','),m=p[0].match(/:(.*?);/)[1],a=atob(p[1]),n=new Uint8Array(a.length);for(let i=0;i<a.length;i++)n[i]=a.charCodeAt(i);return new Blob([n],{type:m})};
+const b2d=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function hydrate(){for(const el of document.querySelectorAll('img[data-iid]')){const id=el.dataset.iid;try{if(!URLS[id]){const b=await imGet(id);if(!b)continue;URLS[id]=URL.createObjectURL(b)}el.src=URLS[id]}catch(e){}}}
+async function saveImgs(fs){const ids=[];for(const f of fs){try{const b=await pic(f);if(!b)continue;const id=uid();await imPut(id,b);ids.push(id)}catch(e){toast('照片儲存失敗')}}return ids}
+async function quota(){const el=$('#sq');if(!el)return;try{const e=await navigator.storage.estimate(),p=await navigator.storage.persisted();el.textContent='已使用約 '+(e.usage/1048576).toFixed(1)+' MB，可用約 '+Math.round(e.quota/1048576)+' MB；持久儲存：'+(p?'已啟用':'未啟用')}catch(x){el.textContent='此瀏覽器無法查詢用量'}}
+async function boot(){
+  try{
+    try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}
+    let st=await kvGet('state');
+    if(!st){
+      st=S;
+      for(const v of Object.values(st.done)){const old=v.imgs||(v.img?[v.img]:[]),ids=[];
+        for(const s of old){if(typeof s==='string'&&s.startsWith('data:')){const id=uid();await imPut(id,d2b(s));ids.push(id)}else ids.push(s)}
+        v.imgs=ids;delete v.img}
+      await kvPut('state',st);
+      if(!(await kvGet('state')))throw 0;
+      toast('資料已升級到新的儲存方式');
+    }
+    S=Object.assign(S,st);
+  }catch(e){toast('無法使用新的儲存方式，照片可能無法保存')}
+  applyTheme();render();
+}
+async function doExp(){
+  toast('整理備份中…');
+  const out=JSON.parse(JSON.stringify(S));out.photos={};
+  for(const v of Object.values(out.done))for(const id of ims(v)){try{const b=await imGet(id);if(b)out.photos[id]=await b2d(b)}catch(e){}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'}));
+  a.download='everyday-backup-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();toast('已產生備份檔，請在下載或檔案中查看');
+}
+async function doImp(mode){
+  const f=$('#f1').files[0];if(!f){toast('請先選擇備份檔');return}
+  try{
+    const o=JSON.parse(await f.text());if(!o.tasks||!o.daily||!o.done)throw 0;
+    for(const [id,u] of Object.entries(o.photos||{}))await imPut(id,d2b(u));
+    for(const v of Object.values(o.done)){const old=v.imgs||(v.img?[v.img]:[]);v.imgs=[];
+      for(const s of old){if(s.startsWith('data:')){const id=uid();await imPut(id,d2b(s));v.imgs.push(id)}else v.imgs.push(s)}delete v.img}
+    delete o.photos;
+    if(mode==='merge'){const has=(a,id)=>a.some(x=>x.id===id);
+      o.tasks.forEach(x=>{if(!has(S.tasks,x.id))S.tasks.push(x)});o.daily.forEach(x=>{if(!has(S.daily,x.id))S.daily.push(x)});
+      Object.entries(o.done).forEach(([k,v])=>{if(!S.done[k])S.done[k]=v})}
+    else S=Object.assign({cats:S.cats,set:S.set},o);
+    save();closeSh();render();toast('匯入完成');
+  }catch(x){toast('備份檔格式不正確')}
 }
 let prev='today';
 const ims=v=>v.imgs||(v.img?[v.img]:[]),hm=ts=>{const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes())};
@@ -146,7 +195,8 @@ function vSet(){
   return `<div class="sech"><h2>外觀</h2></div><div class="chips">${[['light','淺色'],['dark','深色'],['auto','跟隨系統']].map(([v,l])=>`<button data-a="th" data-t="${v}" class="${t===v?'on':''}">${l}</button>`).join('')}</div>
 <div class="sech"><h2>提醒</h2></div><div class="card"><div class="mut">通知狀態：${np}</div>${ok&&Notification.permission==='default'?'<button class="gh sm" data-a="notif" style="margin-top:8px">開啟通知</button>':''}</div>
 <div class="sech"><h2>分類名稱與顏色</h2></div><div class="card">${S.cats.map(c=>`<div class="cr"><input type="color" data-a="cc" data-id="${c.id}" value="${c.c}"><input data-a="cn" data-id="${c.id}" value="${esc(c.n)}"></div>`).join('')}</div>
-<div class="sech"><h2>資料管理</h2></div><div class="card"><div class="mut">已使用約 ${kb} KB（上限約 5000 KB）</div><div class="bt" style="justify-content:flex-start;margin-top:10px"><button class="gh" data-a="exp">匯出</button><button class="gh" data-a="imp">匯入</button></div></div>
+<div class="sech"><h2>照片品質</h2></div><div class="chips">${[['low','省空間'],['std','標準'],['hi','高畫質']].map(([v,l])=>`<button data-a="pq" data-t="${v}" class="${(S.set.q||'std')===v?'on':''}">${l}</button>`).join('')}</div>
+<div class="sech"><h2>資料管理</h2></div><div class="card"><div class="mut" id="sq">計算中…</div><div class="bt" style="justify-content:flex-start;margin-top:10px"><button class="gh" data-a="exp">匯出</button><button class="gh" data-a="imp">匯入</button></div></div>
 <div class="sech"><h2>關於</h2></div><div class="card"><div class="mut">Everyday　版本 2.0</div></div>`}
 document.addEventListener('change',e=>{const el=e.target,a=el.dataset.a;if(a!=='cn'&&a!=='cc')return;const c=catOf(el.dataset.id);if(!c)return;if(a==='cn')c.n=el.value.trim()||c.n;else c.c=el.value;save()});
 document.addEventListener('input',e=>{
@@ -159,7 +209,7 @@ document.addEventListener('input',e=>{
 function recs(d){
   const e=Object.entries(S.done).filter(([k,v])=>v.date===d).sort((a,b)=>a[1].ts-b[1].ts);
   if(!e.length)return '<div class="empty">這天還沒有完成紀錄</div>';
-  return e.map(([k,v])=>`<div class="card"><h2>${esc(v.title)}</h2><div class="mut">完成於 ${hm(v.ts)}</div>${v.text?`<p>${esc(v.text)}</p>`:''}${ims(v).map((s,j)=>`<img src="${s}" alt="完成照片" data-a="zoom" data-k="${k}" data-j="${j}">`).join('')}<button class="x" data-a="delr" data-k="${k}">移除紀錄</button></div>`).join('');
+  return e.map(([k,v])=>`<div class="card"><h2>${esc(v.title)}</h2><div class="mut">完成於 ${hm(v.ts)}</div>${v.text?`<p>${esc(v.text)}</p>`:''}${ims(v).map((s,j)=>`<img data-iid="${s}" alt="完成照片" data-a="zoom" data-k="${k}" data-j="${j}">`).join('')}<button class="x" data-a="delr" data-k="${k}">移除紀錄</button></div>`).join('');
 }
 function vToday(){
   const d=today(),it=itemsFor(d),n=it.filter(i=>S.done[i.k]).length;
@@ -185,7 +235,7 @@ function vDaily(){
   return `<div class="top"><h1>每日任務</h1></div><div class="sech"><span class="mut">設定一次，每天自動出現在今日清單</span><button class="pri sm" data-a="addd">＋ 新增</button></div>${l||'<div class="empty">還沒有每日任務，例如：喝水、運動、閱讀</div>'}
 <div class="sech" style="margin-top:24px"><h2>資料備份</h2></div><div class="bt" style="justify-content:flex-start"><button class="gh" data-a="exp">匯出</button><button class="gh" data-a="imp">匯入</button></div>`;
 }
-function render(){$('#app').innerHTML=bar()+{month:vMonth,today:vToday,daily:vDaily,set:vSet}[view]();document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view))}
+function render(){$('#app').innerHTML=bar()+{month:vMonth,today:vToday,daily:vDaily,set:vSet}[view]();document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view));hydrate();if(view==='set')quota()}
 function openSh(h){$('#sh').innerHTML='<div class="bg" data-a="close"></div><div class="pn">'+h+'</div>';$('#sh').hidden=false}
 const closeSh=()=>$('#sh').hidden=true;
 function fTask(t){t=t||{date:sel};openSh(`<h2>${t.id?'編輯任務':'新增任務'}</h2>
@@ -203,13 +253,13 @@ function fComp(k){const i=itemsFor(k.split('|')[1]).find(x=>x.k===k);if(!i)retur
 <label>心得或記錄（選填）<textarea id="f1" rows="3" placeholder="今天做得如何？"></textarea></label>
 <label>照片（可選多張）<input id="f2" type="file" accept="image/*" multiple></label>
 <div class="bt"><button class="gh" data-a="close">取消</button><button class="pri" data-a="savec" data-k="${k}">標記完成</button></div>`)}
-function pic(f){return new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onload=()=>{const s=Math.min(1,720/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r(c.toDataURL('image/jpeg',.7))};i.onerror=()=>r('');i.src=u})}
+function pic(f){return new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onload=()=>{const s=Math.min(1,(QS[S.set.q]||QS.std)[0]/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>r(b),'image/jpeg',(QS[S.set.q]||QS.std)[1])};i.onerror=()=>r(null);i.src=u})}
 document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-a],[data-v]');if(!el)return;
   if(el.dataset.v){view=el.dataset.v;render();return}
   const a=el.dataset.a,id=el.dataset.id,v=x=>$(x).value.trim();
   if(a==='close')closeSh();
-  else if(a==='zoom'){openSh(`<img src="${ims(S.done[el.dataset.k])[+el.dataset.j||0]}" alt="完成照片" style="width:100%;border-radius:10px"><div class="bt" style="margin-top:12px"><button class="gh" data-a="close">關閉</button></div>`)}
+  else if(a==='zoom'){openSh(`<img data-iid="${ims(S.done[el.dataset.k])[+el.dataset.j||0]}" alt="完成照片" style="width:100%;border-radius:10px"><div class="bt" style="margin-top:12px"><button class="gh" data-a="close">關閉</button></div>`);hydrate()}
   else if(a==='pm'){cm=new Date(cm.getFullYear(),cm.getMonth()-1,1);render()}
   else if(a==='nm'){cm=new Date(cm.getFullYear(),cm.getMonth()+1,1);render()}
   else if(a==='day'){sel=el.dataset.d;render()}
@@ -219,6 +269,9 @@ document.addEventListener('click',async e=>{
   else if(a==='set'){prev=view;view='set';render();scrollTo(0,0)}
   else if(a==='back'){view=prev;render()}
   else if(a==='th'){S.set.theme=el.dataset.t;save();applyTheme();render()}
+  else if(a==='pq'){S.set.q=el.dataset.t;save();render()}
+  else if(a==='imm')await doImp('merge');
+  else if(a==='imo')await doImp('over');
   else if(a==='goto'){sel=el.dataset.d;cm=new Date(sel+'T00:00:00');render()}
   else if(a==='edit'){const t=(el.dataset.kind==='t'?S.tasks:S.daily).find(x=>x.id===id);el.dataset.kind==='t'?fTask(t):fDaily(t)}
   else if(a==='savet'){
@@ -235,18 +288,19 @@ document.addEventListener('click',async e=>{
     save();closeSh();render()}
   else if(a==='delt'){S.tasks=S.tasks.filter(x=>x.id!==id);save();closeSh();render()}
   else if(a==='deld'){S.daily=S.daily.filter(x=>x.id!==id);save();closeSh();render()}
-  else if(a==='ck'){const k=el.dataset.k;if(S.done[k]){delete S.done[k];save();render()}else fComp(k)}
+  else if(a==='ck'){const k=el.dataset.k;if(S.done[k]){ims(S.done[k]).forEach(imDel);delete S.done[k];save();render()}else fComp(k)}
   else if(a==='savec'){
     const k=el.dataset.k,i=itemsFor(k.split('|')[1]).find(x=>x.k===k),f=$('#f2').files[0];
     el.disabled=true;
-    S.done[k]={title:i.title,date:k.split('|')[1],text:v('#f1'),imgs:await Promise.all([...$('#f2').files].map(pic)),c:i.c,ts:Date.now()};
+    S.done[k]={title:i.title,date:k.split('|')[1],text:v('#f1'),imgs:await saveImgs([...$('#f2').files]),c:i.c,ts:Date.now()};
     save();closeSh();render()}
-  else if(a==='delr'){if(!el.dataset.c){el.dataset.c=1;el.textContent='再按一次確認移除';return}delete S.done[el.dataset.k];save();render()}
+  else if(a==='delr'){if(!el.dataset.c){el.dataset.c=1;el.textContent='再按一次確認移除';return}ims(S.done[el.dataset.k]).forEach(imDel);delete S.done[el.dataset.k];save();render()}
   else if(a==='notif'){try{await Notification.requestPermission()}catch(x){}render()}
-  else if(a==='exp'){
+  else if(a==='exp'){doExp()}
+  else if(a==='expx'){
     const j=JSON.stringify(S);openSh(`<h2>匯出備份</h2><label>以下是全部資料，請複製後貼到備忘錄保存<textarea id="f1" rows="6" readonly>${esc(j)}</textarea></label><div class="bt"><button class="gh" data-a="close">關閉</button><button class="pri" data-a="copy">複製</button></div>`)}
   else if(a==='copy'){try{await navigator.clipboard.writeText($('#f1').value);toast('已複製')}catch(x){$('#f1').select();toast('請長按選取後拷貝')}}
-  else if(a==='imp')openSh(`<h2>匯入備份</h2><label>貼上先前匯出的資料（會覆蓋目前內容）<textarea id="f1" rows="6"></textarea></label><div class="bt"><button class="gh" data-a="close">取消</button><button class="pri" data-a="doimp">匯入</button></div>`);
+  else if(a==='imp')openSh(`<h2>匯入備份</h2><label>選擇備份檔（.json）<input id="f1" type="file" accept=".json,application/json"></label><div class="mut" style="margin-bottom:12px">合併：只加入目前沒有的資料。覆蓋：用備份檔取代目前的任務與紀錄。</div><div class="bt"><button class="gh" data-a="close">取消</button><button class="gh" data-a="imm">合併匯入</button><button class="pri" data-a="imo">覆蓋匯入</button></div>`);
   else if(a==='doimp'){try{const o=JSON.parse($('#f1').value);if(!o.tasks||!o.daily||!o.done)throw 0;S=Object.assign({cats:S.cats,set:S.set},o);save();applyTheme();closeSh();render();toast('匯入完成')}catch(x){toast('資料格式不正確')}}
 });
 const fired=new Set();
@@ -262,7 +316,7 @@ function tick(){
 }
 setInterval(tick,30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('#sh').hidden){sel=sel||today();render()}});
-applyTheme();render();
+applyTheme();boot();
 </script>
 </body>
 </html>
