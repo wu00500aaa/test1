@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Everyday">
+<title>Everyday</title>
+<style>
+:root{--bg:#F1F1EF;--sf:#fff;--ink:#7B6756;--mut:#7B6756;--ac:#42707D;--onac:#fff;--acs:#DDE5E5;--ln:#9CA6A7;--gd:#A58760;--dg:#A58760;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171a1b;--sf:#202627;--ink:#e6ddd3;--mut:#b9a998;--ac:#7fb0bd;--onac:#0f1a1c;--acs:#273639;--ln:#3b4547;--gd:#c4a57c;--dg:#c4a57c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171a1b;--sf:#202627;--ink:#e6ddd3;--mut:#b9a998;--ac:#7fb0bd;--onac:#0f1a1c;--acs:#273639;--ln:#3b4547;--gd:#c4a57c;--dg:#c4a57c;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+main{max-width:560px;margin:0 auto;padding:18px 16px calc(92px + env(safe-area-inset-bottom,0px))}
+h1{font-size:22px;margin:0;font-weight:700}
+h2{font-size:17px;margin:0;font-weight:650}
+button{font:inherit;color:inherit;cursor:pointer}
+.top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.mut{color:var(--mut);font-size:14px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sf);border-top:1px solid var(--ln);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:10px 0;font-size:15px;border-radius:10px}
+nav button.on{color:var(--ac);font-weight:700;background:var(--acs)}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mh button{width:44px;height:44px;border:0;background:var(--sf);border-radius:12px;font-size:22px;color:var(--ac)}
+.wk,.grid{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
+.wk span{font-size:13px;color:var(--mut);padding:4px 0}
+.grid{gap:4px;margin-bottom:18px}
+.day{position:relative;aspect-ratio:1/1.05;border:0;background:var(--sf);border-radius:12px;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.day.tod{box-shadow:inset 0 0 0 1.5px var(--gd)}
+.day.sel{background:var(--ac);color:var(--onac)}
+.dts{display:flex;gap:3px;height:5px}
+.day b{width:5px;height:5px;border-radius:50%}
+.day b.dot{background:var(--gd)}
+.day b.rec{background:var(--ac)}
+.day.sel b.dot,.day.sel b.rec{background:var(--onac)}
+.card img{cursor:zoom-in}
+.sech{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}
+.pri,.gh{border:0;border-radius:12px;padding:11px 18px;font-weight:600}
+.pri{background:var(--ac);color:var(--onac)}
+.gh{background:var(--acs);color:var(--ac)}
+.sm{padding:8px 14px;font-size:14px}
+.row{display:flex;align-items:center;gap:12px;background:var(--sf);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.ck{flex:0 0 28px;width:28px;height:28px;min-width:28px;min-height:28px;aspect-ratio:1/1;padding:0;margin:0;-webkit-appearance:none;appearance:none;border-radius:50%;border:2px solid var(--ac);background:none;position:relative}
+.ck.on{background:var(--ac)}
+.ck.on::after{content:"";position:absolute;left:8px;top:3px;width:7px;height:13px;border:solid var(--onac);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.rt{flex:1;min-width:0;border:0;background:none;text-align:left;padding:0}
+.tt{font-size:16px;word-break:break-word}
+.tt.dn{color:var(--mut);text-decoration:line-through}
+.sub{font-size:13px;color:var(--mut)}
+.late{color:var(--dg);font-weight:600}
+.bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.bar b{font-size:17px;color:var(--ac);letter-spacing:.5px}
+.ic{border:0;background:var(--acs);color:var(--ac);padding:8px 14px;border-radius:10px;font-weight:600}
+.tg{display:inline-block;font-size:12px;padding:0 7px;border-radius:8px;border:1px solid var(--tc,var(--ln));color:var(--tc,var(--mut));line-height:1.6}
+.tg.pr1{--tc:var(--gd)}
+.tg.pr2{background:var(--gd);border-color:var(--gd);color:#fff}
+.st{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:18px}
+.st div{background:var(--sf);border-radius:14px;padding:12px}
+.st b{display:block;font-size:22px;color:var(--ac)}
+.st span{font-size:13px;color:var(--mut)}
+.cr{display:flex;gap:10px;margin-bottom:8px}
+.cr input{margin-top:0}
+.cr input[type=color]{width:52px;height:44px;padding:3px}
+.card img{margin-top:8px}
+.empty{text-align:center;color:var(--mut);padding:26px 10px;background:var(--sf);border-radius:14px;font-size:15px}
+.prog{height:8px;background:var(--acs);border-radius:4px;margin:0 0 16px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--ac);border-radius:4px}
+.card{background:var(--sf);border-radius:14px;padding:14px;margin-bottom:10px}
+.card img{width:100%;border-radius:10px;margin-top:10px;display:block}
+.card p{margin:6px 0 0;white-space:pre-wrap;word-break:break-word}
+.card .x{border:0;background:none;color:var(--dg);font-size:13px;padding:8px 0 0}
+.note{background:var(--acs);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:14px}
+.note button{margin-top:8px}
+#sh{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-end}
+#sh[hidden]{display:none}
+.bg{position:absolute;inset:0;background:rgba(0,0,0,.45)}
+.pn{position:relative;width:100%;max-width:560px;margin:0 auto;background:var(--sf);border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow-y:auto}
+.pn h2{margin-bottom:12px}
+label{display:block;font-size:14px;color:var(--mut);margin-bottom:12px}
+input,textarea,select{display:block;width:100%;margin-top:5px;padding:11px 12px;border:1px solid var(--ln);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
+.bt{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.chips{display:flex;gap:6px;margin:6px 0 14px}
+.chips button{flex:1;height:40px;border:1px solid var(--ln);background:var(--bg);border-radius:10px}
+.chips button.on{background:var(--ac);color:var(--onac);border-color:var(--ac)}
+#tt{position:fixed;left:16px;right:16px;top:calc(12px + env(safe-area-inset-top,0px));max-width:528px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;z-index:20;font-size:15px}
+#tt[hidden]{display:none}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav>
+<button data-v="today">今日</button>
+<button data-v="month">月曆</button>
+<button data-v="daily">每日任務</button>
+</nav>
+<div id="sh" hidden></div>
+<div id="tt" hidden></div>
+<script>
+const $=s=>document.querySelector(s),K='daily-planner-v1',WD='日一二三四五六';
+let S={tasks:[],daily:[],done:{},set:{theme:'auto'},cats:[{id:'c1',n:'學習',c:'#42707D'},{id:'c2',n:'工作',c:'#7B6756'},{id:'c3',n:'生活',c:'#A58760'},{id:'c4',n:'運動',c:'#5E8C95'},{id:'c5',n:'娛樂',c:'#B49A7A'},{id:'c6',n:'其他',c:'#9CA6A7'}]},view='today',sel,cm=new Date();
+try{const r=localStorage.getItem(K);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const pad=n=>String(n).padStart(2,'0'),ds=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>ds(new Date()),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=d=>{const x=new Date(d+'T00:00:00');return (x.getMonth()+1)+' 月 '+x.getDate()+' 日 週'+WD[x.getDay()]};
+const nowHM=()=>{const n=new Date();return pad(n.getHours())+':'+pad(n.getMinutes())};
+sel=today();
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast('儲存空間不足，請先備份並移除部分圖片')}}
+let tm;function toast(m){const t=$('#tt');t.textContent=m;t.hidden=false;clearTimeout(tm);tm=setTimeout(()=>t.hidden=true,4000)}
+function itemsFor(d){
+  const wd=new Date(d+'T00:00:00').getDay();
+  const a=S.tasks.filter(t=>t.date===d).map(t=>({k:'t'+t.id+'|'+d,id:t.id,kind:'t',title:t.title,time:t.time,note:t.note,c:t.c,p:t.p}));
+  const b=S.daily.filter(t=>t.days.includes(wd)&&(!t.start||d>=t.start)).map(t=>({k:'d'+t.id+'|'+d,id:t.id,kind:'d',title:t.title,time:t.time,c:t.c,p:t.p}));
+  return a.concat(b).sort((x,y)=>(x.time||'99').localeCompare(y.time||'99'));
+}
+function list(d){
+  const it=itemsFor(d);
+  if(!it.length)return '<div class="empty">這天還沒有任務</div>';
+  const hm=nowHM(),isT=d===today();
+  return it.map(i=>{
+    const dn=!!S.done[i.k],late=isT&&!dn&&i.time&&i.time<=hm;
+    return `<div class="row"><button class="ck${dn?' on':''}" data-a="ck" data-k="${i.k}" aria-label="標記完成"></button>
+<button class="rt" data-a="edit" data-kind="${i.kind}" data-id="${i.id}"><div class="tt${dn?' dn':''}">${esc(i.title)}</div>
+<div class="sub${late?' late':''}">${late?'已到提醒時間 ':''}${i.time?i.time+' ':''}${i.kind==='d'?'每日任務':''}${tag(i)}${i.note?' ' + esc(i.note):''}</div></button></div>`}).join('');
+}
+let prev='today';
+const ims=v=>v.imgs||(v.img?[v.img]:[]),hm=ts=>{const d=new Date(ts);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const catOf=id=>S.cats.find(c=>c.id===id);
+function tag(i){const c=catOf(i.c),p=['','重要','緊急'][i.p||0];return (c?` <span class="tg" style="--tc:${c.c}">${esc(c.n)}</span>`:'')+(p?` <span class="tg pr${i.p}">${p}</span>`:'')}
+const selCP=t=>`<label>分類<select id="f5">${S.cats.map(c=>`<option value="${c.id}"${(t.c||'c6')===c.id?' selected':''}>${esc(c.n)}</option>`).join('')}</select></label><label>優先程度<select id="f6"><option value="0">一般</option><option value="1"${t.p==1?' selected':''}>重要</option><option value="2"${t.p==2?' selected':''}>緊急</option></select></label>`;
+function applyTheme(){const t=S.set.theme;if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t)}
+function bar(){return view==='set'?'<div class="bar"><button class="ic" data-a="back">‹ 返回</button><b>設定</b><span></span></div>':'<div class="bar"><b>Everyday</b><button class="ic" data-a="set">設定</button></div>'}
+function stats(){
+  const now=new Date(),td=today(),y=cm.getFullYear(),m=cm.getMonth(),pm=y+'-'+pad(m+1)+'-',dn=Object.values(S.done);
+  const w=new Date(now);w.setDate(now.getDate()-now.getDay());const ws=ds(w);
+  const wk=dn.filter(v=>v.date>=ws&&v.date<=td).length,mo=dn.filter(v=>v.date.startsWith(pm)).length;
+  const days=new Set(dn.map(v=>v.date));let st=0,d=new Date(now);if(!days.has(ds(d)))d.setDate(d.getDate()-1);while(days.has(ds(d))){st++;d.setDate(d.getDate()-1)}
+  let sum=0,cnt=0;for(let i=1;i<=new Date(y,m+1,0).getDate();i++){const k=pm+pad(i);if(k>td)break;const it=itemsFor(k);if(!it.length)continue;sum+=it.filter(x=>S.done[x.k]).length/it.length;cnt++}
+  const cc={};dn.filter(v=>v.date.startsWith(pm)&&v.c).forEach(v=>cc[v.c]=(cc[v.c]||0)+1);
+  const tp=Object.entries(cc).sort((a,b)=>b[1]-a[1])[0],tc=tp&&catOf(tp[0]);
+  return `<div class="sech" style="margin-top:20px"><h2>統計</h2></div><div class="st"><div><b>${wk}</b><span>本週完成</span></div><div><b>${mo}</b><span>${m+1} 月完成</span></div><div><b>${st} 天</b><span>連續完成</span></div><div><b>${cnt?Math.round(sum/cnt*100):0}%</b><span>${m+1} 月平均完成率</span></div><div style="grid-column:1/3"><b>${tc?esc(tc.n):'—'}</b><span>${m+1} 月最常完成的分類</span></div></div>`}
+function vSet(){
+  const t=S.set.theme,ok='Notification' in window,np=ok?{granted:'已開啟',denied:'已封鎖（請至 iPhone 設定開啟）','default':'尚未開啟'}[Notification.permission]:'此瀏覽器不支援',kb=Math.round(JSON.stringify(S).length/1024);
+  return `<div class="sech"><h2>外觀</h2></div><div class="chips">${[['light','淺色'],['dark','深色'],['auto','跟隨系統']].map(([v,l])=>`<button data-a="th" data-t="${v}" class="${t===v?'on':''}">${l}</button>`).join('')}</div>
+<div class="sech"><h2>提醒</h2></div><div class="card"><div class="mut">通知狀態：${np}</div>${ok&&Notification.permission==='default'?'<button class="gh sm" data-a="notif" style="margin-top:8px">開啟通知</button>':''}</div>
+<div class="sech"><h2>分類名稱與顏色</h2></div><div class="card">${S.cats.map(c=>`<div class="cr"><input type="color" data-a="cc" data-id="${c.id}" value="${c.c}"><input data-a="cn" data-id="${c.id}" value="${esc(c.n)}"></div>`).join('')}</div>
+<div class="sech"><h2>資料管理</h2></div><div class="card"><div class="mut">已使用約 ${kb} KB（上限約 5000 KB）</div><div class="bt" style="justify-content:flex-start;margin-top:10px"><button class="gh" data-a="exp">匯出</button><button class="gh" data-a="imp">匯入</button></div></div>
+<div class="sech"><h2>關於</h2></div><div class="card"><div class="mut">Everyday　版本 2.0</div></div>`}
+document.addEventListener('change',e=>{const el=e.target,a=el.dataset.a;if(a!=='cn'&&a!=='cc')return;const c=catOf(el.dataset.id);if(!c)return;if(a==='cn')c.n=el.value.trim()||c.n;else c.c=el.value;save()});
+document.addEventListener('input',e=>{
+  if(e.target.id!=='q')return;const q=e.target.value.trim().toLowerCase(),box=$('#qr'),r=[];
+  if(!q){box.innerHTML='';return}
+  S.tasks.forEach(t=>{if((t.title+(t.note||'')).toLowerCase().includes(q))r.push([t.date,'任務',t.title])});
+  Object.values(S.done).forEach(v=>{if((v.title+(v.text||'')).toLowerCase().includes(q))r.push([v.date,'紀錄',v.title])});
+  r.sort((a,b)=>b[0].localeCompare(a[0]));
+  box.innerHTML=(r.length?r.slice(0,20).map(x=>`<button class="row" data-a="goto" data-d="${x[0]}" style="width:100%;border:0;text-align:left"><div><div class="tt">${esc(x[2])}</div><div class="sub">${x[1]}　${fmt(x[0])}</div></div></button>`).join(''):'<div class="empty">找不到相符的結果</div>')+'<div style="height:10px"></div>'});
+function recs(d){
+  const e=Object.entries(S.done).filter(([k,v])=>v.date===d).sort((a,b)=>a[1].ts-b[1].ts);
+  if(!e.length)return '<div class="empty">這天還沒有完成紀錄</div>';
+  return e.map(([k,v])=>`<div class="card"><h2>${esc(v.title)}</h2><div class="mut">完成於 ${hm(v.ts)}</div>${v.text?`<p>${esc(v.text)}</p>`:''}${ims(v).map((s,j)=>`<img src="${s}" alt="完成照片" data-a="zoom" data-k="${k}" data-j="${j}">`).join('')}<button class="x" data-a="delr" data-k="${k}">移除紀錄</button></div>`).join('');
+}
+function vToday(){
+  const d=today(),it=itemsFor(d),n=it.filter(i=>S.done[i.k]).length;
+  let ask='';
+  if('Notification' in window&&Notification.permission==='default')ask='<div class="note">開啟通知，到提醒時間會跳出訊息。<br><button class="gh sm" data-a="notif">開啟通知</button></div>';
+  return `<div class="top"><h1>今日</h1><span class="mut">${fmt(d)}</span></div>${ask}
+<div class="sech"><h2>已完成 ${n} / ${it.length}</h2><button class="pri sm" data-a="addt" data-d="${d}">＋ 新增任務</button></div>
+<div class="prog"><i style="width:${it.length?n/it.length*100:0}%"></i></div>${list(d)}`;
+}
+function vMonth(){
+  const y=cm.getFullYear(),m=cm.getMonth(),first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate();
+  let g='';const rd=new Set(Object.values(S.done).map(v=>v.date));for(let i=0;i<first;i++)g+='<i></i>';
+  for(let d=1;d<=n;d++){const k=y+'-'+pad(m+1)+'-'+pad(d),has=S.tasks.some(t=>t.date===k),rc=rd.has(k);
+    g+=`<button class="day${k===sel?' sel':''}${k===today()?' tod':''}" data-a="day" data-d="${k}">${d}<span class="dts"><b class="${has?'dot':''}"></b><b class="${rc?'rec':''}"></b></span></button>`}
+  return `<input id="q" type="search" placeholder="搜尋任務名稱或心得" style="margin:0 0 10px"><div id="qr"></div><div class="mh"><button data-a="pm" aria-label="上個月">‹</button><h1>${y} 年 ${m+1} 月</h1><button data-a="nm" aria-label="下個月">›</button></div>
+<div class="wk">${WD.split('').map(x=>`<span>${x}</span>`).join('')}</div><div class="grid">${g}</div>
+<div class="sech"><h2>${fmt(sel)}</h2><button class="pri sm" data-a="addt" data-d="${sel}">＋ 新增任務</button></div>${list(sel)}
+<div class="sech" style="margin-top:20px"><h2>完成紀錄</h2></div>${recs(sel)}${stats()}`;
+}
+function vDaily(){
+  const l=S.daily.map(t=>`<div class="row"><button class="rt" data-a="edit" data-kind="d" data-id="${t.id}"><div class="tt">${esc(t.title)}</div>
+<div class="sub">${t.days.length===7?'每天':'週'+t.days.map(i=>WD[i]).join('、')}${t.time?'　'+t.time:''}</div></button></div>`).join('');
+  return `<div class="top"><h1>每日任務</h1></div><div class="sech"><span class="mut">設定一次，每天自動出現在今日清單</span><button class="pri sm" data-a="addd">＋ 新增</button></div>${l||'<div class="empty">還沒有每日任務，例如：喝水、運動、閱讀</div>'}
+<div class="sech" style="margin-top:24px"><h2>資料備份</h2></div><div class="bt" style="justify-content:flex-start"><button class="gh" data-a="exp">匯出</button><button class="gh" data-a="imp">匯入</button></div>`;
+}
+function render(){$('#app').innerHTML=bar()+{month:vMonth,today:vToday,daily:vDaily,set:vSet}[view]();document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===view))}
+function openSh(h){$('#sh').innerHTML='<div class="bg" data-a="close"></div><div class="pn">'+h+'</div>';$('#sh').hidden=false}
+const closeSh=()=>$('#sh').hidden=true;
+function fTask(t){t=t||{date:sel};openSh(`<h2>${t.id?'編輯任務':'新增任務'}</h2>
+<label>任務名稱<input id="f1" value="${esc(t.title)}" placeholder="例如：繳水電費"></label>
+<label>日期<input id="f2" type="date" value="${t.date}"></label>
+<label>提醒時間（選填）<input id="f3" type="time" value="${esc(t.time)}"></label>
+<label>備註（選填）<textarea id="f4" rows="2">${esc(t.note)}</textarea></label>${selCP(t)}
+<div class="bt">${t.id?`<button class="gh" data-a="delt" data-id="${t.id}">刪除</button>`:''}<button class="gh" data-a="close">取消</button><button class="pri" data-a="savet" data-id="${t.id||''}">儲存</button></div>`)}
+function fDaily(t){t=t||{days:[0,1,2,3,4,5,6]};openSh(`<h2>${t.id?'編輯每日任務':'新增每日任務'}</h2>
+<label>任務名稱<input id="f1" value="${esc(t.title)}" placeholder="例如：喝水 2000 毫升"></label>
+${selCP(t)}<div class="mut">重複日</div><div class="chips" id="wd">${WD.split('').map((x,i)=>`<button data-a="wd" data-w="${i}" class="${t.days.includes(i)?'on':''}">${x}</button>`).join('')}</div>
+<label>提醒時間（選填）<input id="f3" type="time" value="${esc(t.time)}"></label>
+<div class="bt">${t.id?`<button class="gh" data-a="deld" data-id="${t.id}">刪除</button>`:''}<button class="gh" data-a="close">取消</button><button class="pri" data-a="saved" data-id="${t.id||''}">儲存</button></div>`)}
+function fComp(k){const i=itemsFor(k.split('|')[1]).find(x=>x.k===k);if(!i)return;openSh(`<h2>完成：${esc(i.title)}</h2>
+<label>心得或記錄（選填）<textarea id="f1" rows="3" placeholder="今天做得如何？"></textarea></label>
+<label>照片（可選多張）<input id="f2" type="file" accept="image/*" multiple></label>
+<div class="bt"><button class="gh" data-a="close">取消</button><button class="pri" data-a="savec" data-k="${k}">標記完成</button></div>`)}
+function pic(f){return new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onload=()=>{const s=Math.min(1,720/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=Math.round(i.width*s);c.height=Math.round(i.height*s);c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r(c.toDataURL('image/jpeg',.7))};i.onerror=()=>r('');i.src=u})}
+document.addEventListener('click',async e=>{
+  const el=e.target.closest('[data-a],[data-v]');if(!el)return;
+  if(el.dataset.v){view=el.dataset.v;render();return}
+  const a=el.dataset.a,id=el.dataset.id,v=x=>$(x).value.trim();
+  if(a==='close')closeSh();
+  else if(a==='zoom'){openSh(`<img src="${ims(S.done[el.dataset.k])[+el.dataset.j||0]}" alt="完成照片" style="width:100%;border-radius:10px"><div class="bt" style="margin-top:12px"><button class="gh" data-a="close">關閉</button></div>`)}
+  else if(a==='pm'){cm=new Date(cm.getFullYear(),cm.getMonth()-1,1);render()}
+  else if(a==='nm'){cm=new Date(cm.getFullYear(),cm.getMonth()+1,1);render()}
+  else if(a==='day'){sel=el.dataset.d;render()}
+  else if(a==='addt')fTask({date:el.dataset.d});
+  else if(a==='addd')fDaily();
+  else if(a==='wd')el.classList.toggle('on');
+  else if(a==='set'){prev=view;view='set';render();scrollTo(0,0)}
+  else if(a==='back'){view=prev;render()}
+  else if(a==='th'){S.set.theme=el.dataset.t;save();applyTheme();render()}
+  else if(a==='goto'){sel=el.dataset.d;cm=new Date(sel+'T00:00:00');render()}
+  else if(a==='edit'){const t=(el.dataset.kind==='t'?S.tasks:S.daily).find(x=>x.id===id);el.dataset.kind==='t'?fTask(t):fDaily(t)}
+  else if(a==='savet'){
+    if(!v('#f1')){toast('請輸入任務名稱');return}
+    const o={title:v('#f1'),date:$('#f2').value||sel,time:$('#f3').value,note:v('#f4'),c:$('#f5').value,p:+$('#f6').value};
+    if(id)Object.assign(S.tasks.find(x=>x.id===id),o);else S.tasks.push(Object.assign({id:uid()},o));
+    save();closeSh();render()}
+  else if(a==='saved'){
+    const days=[...document.querySelectorAll('#wd .on')].map(b=>+b.dataset.w);
+    if(!v('#f1')){toast('請輸入任務名稱');return}
+    if(!days.length){toast('請至少選一天');return}
+    const o={title:v('#f1'),days,time:$('#f3').value,c:$('#f5').value,p:+$('#f6').value};
+    if(id)Object.assign(S.daily.find(x=>x.id===id),o);else S.daily.push(Object.assign({id:uid(),start:today()},o));
+    save();closeSh();render()}
+  else if(a==='delt'){S.tasks=S.tasks.filter(x=>x.id!==id);save();closeSh();render()}
+  else if(a==='deld'){S.daily=S.daily.filter(x=>x.id!==id);save();closeSh();render()}
+  else if(a==='ck'){const k=el.dataset.k;if(S.done[k]){delete S.done[k];save();render()}else fComp(k)}
+  else if(a==='savec'){
+    const k=el.dataset.k,i=itemsFor(k.split('|')[1]).find(x=>x.k===k),f=$('#f2').files[0];
+    el.disabled=true;
+    S.done[k]={title:i.title,date:k.split('|')[1],text:v('#f1'),imgs:await Promise.all([...$('#f2').files].map(pic)),c:i.c,ts:Date.now()};
+    save();closeSh();render()}
+  else if(a==='delr'){if(!el.dataset.c){el.dataset.c=1;el.textContent='再按一次確認移除';return}delete S.done[el.dataset.k];save();render()}
+  else if(a==='notif'){try{await Notification.requestPermission()}catch(x){}render()}
+  else if(a==='exp'){
+    const j=JSON.stringify(S);openSh(`<h2>匯出備份</h2><label>以下是全部資料，請複製後貼到備忘錄保存<textarea id="f1" rows="6" readonly>${esc(j)}</textarea></label><div class="bt"><button class="gh" data-a="close">關閉</button><button class="pri" data-a="copy">複製</button></div>`)}
+  else if(a==='copy'){try{await navigator.clipboard.writeText($('#f1').value);toast('已複製')}catch(x){$('#f1').select();toast('請長按選取後拷貝')}}
+  else if(a==='imp')openSh(`<h2>匯入備份</h2><label>貼上先前匯出的資料（會覆蓋目前內容）<textarea id="f1" rows="6"></textarea></label><div class="bt"><button class="gh" data-a="close">取消</button><button class="pri" data-a="doimp">匯入</button></div>`);
+  else if(a==='doimp'){try{const o=JSON.parse($('#f1').value);if(!o.tasks||!o.daily||!o.done)throw 0;S=Object.assign({cats:S.cats,set:S.set},o);save();applyTheme();closeSh();render();toast('匯入完成')}catch(x){toast('資料格式不正確')}}
+});
+const fired=new Set();
+function tick(){
+  const d=today(),hm=nowHM();
+  itemsFor(d).forEach(i=>{
+    if(i.time===hm&&!S.done[i.k]&&!fired.has(i.k)){
+      fired.add(i.k);toast('提醒：'+i.title);
+      if('Notification' in window&&Notification.permission==='granted'){try{new Notification('任務提醒',{body:i.title})}catch(x){}}
+    }});
+  if(!$('#sh').hidden)return;
+  if(view==='today')render();
+}
+setInterval(tick,30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('#sh').hidden){sel=sel||today();render()}});
+applyTheme();render();
+</script>
+</body>
+</html>
